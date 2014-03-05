@@ -1,0 +1,11 @@
+# Configuration for librarian-puppet. For example:
+#
+forge "http://forge.puppetlabs.com"
+
+mod "portertech/mongodb"
+mod "puppetlabs/stdlib"
+mod "puppetlabs/apt"
+mod "puppetlabs/rabbitmq"
+mod "puppetlabs/apache"
+mod "garethr/erlang"
+mod "saz/timezone"
