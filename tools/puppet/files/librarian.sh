@@ -40,6 +40,9 @@ fi
 cp /vagrant/tools/puppet/Puppetfile $PUPPET_DIR
 
 if [ "$(gem search -i librarian-puppet)" = "false" ]; then
+  #On Ubuntu 13.10, we need to install dev version of ruby, else get "cannot load such file -- mkmf" message
+  apt-get install -q -y ruby-dev
+  echo 'ruby-dev installed'
   gem install librarian-puppet
   cd $PUPPET_DIR && librarian-puppet install --clean
 else

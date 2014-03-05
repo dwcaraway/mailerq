@@ -30,6 +30,8 @@ node "devel" {
     timezone => 'UTC',
   }
 
-  include mailerq
+  include '::rabbitmq'
+
+  #include mailerq
 
 }
