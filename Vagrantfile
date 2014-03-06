@@ -1,136 +1,101 @@
-# -*- mode: ruby -*-
-# vi: set ft=ruby :
+require 'yaml'
 
-# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
-VAGRANTFILE_API_VERSION = "2"
+dir = File.dirname(File.expand_path(__FILE__))
 
-Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  # All Vagrant configuration is done here. The most common configuration
-  # options are documented and commented below. For a complete reference,
-  # please see the online documentation at vagrantup.com.
+configValues = YAML.load_file("#{dir}/puphpet/config.yaml")
+data = configValues['vagrantfile-local']
 
-  # Every Vagrant virtual environment requires a box to build off of.
-  config.vm.box = "ubuntu13.10"
+Vagrant.configure("2") do |config|
+  config.vm.box = "#{data['vm']['box']}"
+  config.vm.box_url = "#{data['vm']['box_url']}"
 
-  # The url from where the 'config.vm.box' box will be fetched if it
-  # doesn't already exist on the user's system.
-  config.vm.box_url = "http://cloud-images.ubuntu.com/vagrant/saucy/current/saucy-server-cloudimg-amd64-vagrant-disk1.box"
-
-  # Create a forwarded port mapping which allows access to a specific port
-  # within the machine from a port on the host machine. In the example below,
-  # accessing "localhost:8080" will access port 80 on the guest machine.
-  config.vm.network :forwarded_port, guest: 80, host: 8080
-
-  # Create a private network, which allows host-only access to the machine
-  # using a specific IP.
-  config.vm.network :private_network, ip: "192.168.33.10"
-
-  # Create a public network, which generally matched to bridged network.
-  # Bridged networks make the machine appear as another physical device on
-  # your network.
-  # config.vm.network :public_network
-
-  # If true, then any SSH connections made will enable agent forwarding.
-  # Default value: false
-  # config.ssh.forward_agent = true
-
-  # Share an additional folder to the guest VM. The first argument is
-  # the path on the host to the actual folder. The second argument is
-  # the path on the guest to mount the folder. And the optional third
-  # argument is a set of non-required options.
-  # config.vm.synced_folder "../data", "/vagrant_data"
-
-  # Provider-specific configuration so you can fine-tune various
-  # backing providers for Vagrant. These expose provider-specific options.
-  # Example for VirtualBox:
-  #
-  # config.vm.provider :virtualbox do |vb|
-  #   # Don't boot with headless mode
-  #   vb.gui = true
-  #
-  #   # Use VBoxManage to customize the VM. For example to change memory:
-  #   vb.customize ["modifyvm", :id, "--memory", "1024"]
-  # end
-  #
-  # View the documentation for the provider you're using for more
-  # information on available options.
-
-  # Enable provisioning with Puppet stand alone.  Puppet manifests
-  # are contained in a directory path relative to this Vagrantfile.
-  # You will need to create the manifests directory and a manifest in
-  # the file base.pp in the manifests_path directory.
-  #
-  # An example Puppet manifest to provision the message of the day:
-  #
-  # # group { "puppet":
-  # #   ensure => "present",
-  # # }
-  # #
-  # # File { owner => 0, group => 0, mode => 0644 }
-  # #
-  # # file { '/etc/motd':
-  # #   content => "Welcome to your Vagrant-built virtual machine!
-  # #               Managed by Puppet.\n"
-  # # }
-  #
-  # config.vm.provision :puppet do |puppet|
-  #   puppet.manifests_path = "manifests"
-  #   puppet.manifest_file  = "site.pp"
-  # end
-
-  # This shell provisioner installs librarian-puppet and runs it to install
-  # puppet modules. This has to be done before the puppet provisioning so that
-  # the modules are available when puppet tries to parse its manifests.
-  config.vm.provision :shell, :path => "tools/puppet/files/librarian.sh"
-
-  # Enable provisioning with Puppet stand alone.  Puppet manifests
-  # are contained in a directory path relative to this Vagrantfile.
-  # You will need to create the manifests directory and a manifest in
-  # the file ..pp in the manifests_path directory.
-  config.vm.provision :puppet do |puppet|
-     puppet.manifests_path = "tools/puppet/manifests"
-     puppet.options = ['--verbose', '--debug']
-     puppet.manifest_file  = "site.pp"
-     puppet.facter = {
-        "fqdn" => "devel"
-     }
+  if data['vm']['hostname'].to_s != ''
+    config.vm.hostname = "#{data['vm']['hostname']}"
   end
 
-  # Enable provisioning with chef solo, specifying a cookbooks path, roles
-  # path, and data_bags path (all relative to this Vagrantfile), and adding
-  # some recipes and/or roles.
-  #
-  # config.vm.provision :chef_solo do |chef|
-  #   chef.cookbooks_path = "../my-recipes/cookbooks"
-  #   chef.roles_path = "../my-recipes/roles"
-  #   chef.data_bags_path = "../my-recipes/data_bags"
-  #   chef.add_recipe "mysql"
-  #   chef.add_role "web"
-  #
-  #   # You may also specify custom JSON attributes:
-  #   chef.json = { :mysql_password => "foo" }
-  # end
+  if data['vm']['network']['private_network'].to_s != ''
+    config.vm.network "private_network", ip: "#{data['vm']['network']['private_network']}"
+  end
 
-  # Enable provisioning with chef server, specifying the chef server URL,
-  # and the path to the validation key (relative to this Vagrantfile).
-  #
-  # The Opscode Platform uses HTTPS. Substitute your organization for
-  # ORGNAME in the URL and validation key.
-  #
-  # If you have your own Chef Server, use the appropriate URL, which may be
-  # HTTP instead of HTTPS depending on your configuration. Also change the
-  # validation key to validation.pem.
-  #
-  # config.vm.provision :chef_client do |chef|
-  #   chef.chef_server_url = "https://api.opscode.com/organizations/ORGNAME"
-  #   chef.validation_key_path = "ORGNAME-validator.pem"
-  # end
-  #
-  # If you're using the Opscode platform, your validator client is
-  # ORGNAME-validator, replacing ORGNAME with your organization name.
-  #
-  # If you have your own Chef Server, the default validation client name is
-  # chef-validator, unless you changed the configuration.
-  #
-  #   chef.validation_client_name = "ORGNAME-validator"
+  data['vm']['network']['forwarded_port'].each do |i, port|
+    if port['guest'] != '' && port['host'] != ''
+      config.vm.network :forwarded_port, guest: port['guest'].to_i, host: port['host'].to_i
+    end
+  end
+
+  data['vm']['synced_folder'].each do |i, folder|
+    if folder['source'] != '' && folder['target'] != '' && folder['id'] != ''
+      nfs = (folder['nfs'] == "true") ? "nfs" : nil
+      config.vm.synced_folder "#{folder['source']}", "#{folder['target']}", id: "#{folder['id']}", type: nfs
+    end
+  end
+
+  config.vm.usable_port_range = (10200..10500)
+
+  if !data['vm']['provider']['virtualbox'].empty?
+    config.vm.provider :virtualbox do |virtualbox|
+      data['vm']['provider']['virtualbox']['modifyvm'].each do |key, value|
+        if key == "natdnshostresolver1"
+          value = value ? "on" : "off"
+        end
+        virtualbox.customize ["modifyvm", :id, "--#{key}", "#{value}"]
+      end
+    end
+  end
+
+  config.vm.provision "shell" do |s|
+    s.path = "puphpet/shell/initial-setup.sh"
+    s.args = "/vagrant/puphpet"
+  end
+  config.vm.provision :shell, :path => "puphpet/shell/update-puppet.sh"
+#  config.vm.provision :shell, :path => "puphpet/shell/librarian.sh"
+  config.vm.provision :shell, :path => "puphpet/shell/librarian-puppet-vagrant.sh"
+
+  config.vm.provision :puppet do |puppet|
+    ssh_username = !data['ssh']['username'].nil? ? data['ssh']['username'] : "vagrant"
+    puppet.facter = {
+      "ssh_username" => "#{ssh_username}"
+    }
+    puppet.manifests_path = "#{data['vm']['provision']['puppet']['manifests_path']}"
+    puppet.manifest_file = "#{data['vm']['provision']['puppet']['manifest_file']}"
+
+    if !data['vm']['provision']['puppet']['options'].empty?
+      puppet.options = data['vm']['provision']['puppet']['options']
+    end
+  end
+
+  config.vm.provision :shell, :path => "puphpet/shell/execute-files.sh"
+
+  if !data['ssh']['host'].nil?
+    config.ssh.host = "#{data['ssh']['host']}"
+  end
+  if !data['ssh']['port'].nil?
+    config.ssh.port = "#{data['ssh']['port']}"
+  end
+  if !data['ssh']['private_key_path'].nil?
+    config.ssh.private_key_path = "#{data['ssh']['private_key_path']}"
+  end
+  if !data['ssh']['username'].nil?
+    config.ssh.username = "#{data['ssh']['username']}"
+  end
+  if !data['ssh']['guest_port'].nil?
+    config.ssh.guest_port = data['ssh']['guest_port']
+  end
+  if !data['ssh']['shell'].nil?
+    config.ssh.shell = "#{data['ssh']['shell']}"
+  end
+  if !data['ssh']['keep_alive'].nil?
+    config.ssh.keep_alive = data['ssh']['keep_alive']
+  end
+  if !data['ssh']['forward_agent'].nil?
+    config.ssh.forward_agent = data['ssh']['forward_agent']
+  end
+  if !data['ssh']['forward_x11'].nil?
+    config.ssh.forward_x11 = data['ssh']['forward_x11']
+  end
+  if !data['vagrant']['host'].nil?
+    config.vagrant.host = data['vagrant']['host'].gsub(":", "").intern
+  end
+
 end
+
