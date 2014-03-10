@@ -919,14 +919,25 @@ if hash_key_equals($rabbitmq_values, 'install', 1) {
     default   => 'i386',
   }
 
-    wget::fetch { "download Mailerq deb file x64":
-       source      => "http://mailerq.com/Resources/packages/mailerq-0.7.4-${mailerbits}.deb",
-       destination => '/tmp/mailerq.deb',
-       timeout     => 0,
-       verbose     => false,
-    }->
-    package { "mailerq":
-      provider => dpkg,
-      ensure   => latest,
-      source   => "/tmp/mailerq.deb"
-    }
+  wget::fetch { "download Mailerq deb file x64":
+     source      => "http://mailerq.com/Resources/packages/mailerq-0.7.4-${mailerbits}.deb",
+     destination => '/tmp/mailerq.deb',
+     timeout     => 0,
+     verbose     => false,
+  }->
+  package { "mailerq":
+    provider => dpkg,
+    ensure   => latest,
+    source   => "/tmp/mailerq.deb"
+  }
+
+  file {'/etc/mailerq/config.txt':
+      ensure  => file,
+      require => Package['mailerq'],
+      content => template('/vagrant/puphpet/puppet/mailerq.conf.erb'),
+  } ->
+
+  exec {"run mailerq daemon":
+    command   => "mailerq &",
+    unless    => "ps -ef | grep '[m]ailerq'"
+  }

@@ -1,0 +1,74 @@
+#   Configuration file for MailerQ application.
+
+#   RabbitMQ configuration.
+rabbitmq-host:          127.0.0.1
+rabbitmq-user:          guest
+rabbitmq-password:      guest
+rabbitmq-vhost:         /
+rabbitmq-outbox:        outbox
+rabbitmq-results:       results
+rabbitmq-success:       success
+rabbitmq-failure:       failure
+rabbitmq-inbox:         outbox
+rabbitmq-retry:         retries
+rabbitmq-persistent:    1
+
+#   Database configuration.
+database:               mysql://mailuser:password@localhost/mailerq
+
+#   Storage configuration.
+#storage:                couchbase://password@localhost/mailerq
+storage:
+
+#   Automatic retries
+max-attempts:           6
+max-deliver-time:       86400
+
+#   Default delivery limit for domains.
+domain-maxmessages:     -1
+domain-maxconnects:     -1
+domain-maxconnections:  -1
+
+
+#   Default delivery limit for IP addresses.
+ip-maxmessages:         -1
+ip-maxconnects:         -1
+ip-maxconnections:       2
+
+
+#   Default delivery limit for connections.
+connection-maxmessages: -1
+connection-maxidle:     1000
+connection-secure:      1
+
+
+#   Number of threads.
+max-threads:            10
+
+#   Max number of connections in total.
+max-connections:        10000
+
+#   Max number of messages loaded into main memory.
+max-messages:           100000
+
+#   Max memory to use by MailerQ
+max-memory:             4GB
+
+#   Management console options.
+www-port:               8485
+www-dir:                /usr/share/mailerq/www
+www-password:           mailerq
+
+#   Smtp options
+smtp-port:              2525
+smtp-range:             192.168.0.0/16;127.0.0.1
+
+#   Logging
+log-directory:          /var/log/mailerq
+log-history:            20
+
+#   File that holds licensing information
+license:                /etc/mailerq/license.txt
+
+#   User ID
+user:                   mailerq
